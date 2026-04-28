@@ -985,8 +985,7 @@ async function updateAdminStats(){
     document.getElementById("totalSales").innerText = totalSales.toFixed(2);
   } catch(error) {
     console.error("خطأ في تحديث الإحصائيات:", error);
-  }
-  async function showAllUsers(){
+  }async function showAllUsers(){
   try {
     const { data: users } = await supabaseClient.from("users").select("*");
     let html='<h3 style="text-align:center; padding:10px; color:#2ecc71;">👥 إدارة المستخدمين</h3>';
@@ -1018,7 +1017,6 @@ async function updateAdminStats(){
     alert("❌ فشل في تحميل البيانات");
   }
 }
-
 
 async function addBalance(userId){
   let amount=parseFloat(document.getElementById("amount_"+userId).value);
