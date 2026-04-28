@@ -784,8 +784,6 @@ async function login(){
     // ✅ إذا كان إيميل الإدمن، اظهر زر الإدمن في الشريط الجانبي
     if(email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
       document.getElementById("adminLink").style.display = "block";
-      // ثم افتح لوحة الإدمن مباشرة
-      setTimeout(() => openAdmin(), 300);
     }
     
     alert("✅ أهلا وسهلا!");
