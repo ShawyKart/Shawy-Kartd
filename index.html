@@ -88,13 +88,6 @@ font-size:12px;
 box-sizing:border-box;
 }
 
-.profile-input-label{
-color:white;
-font-size:12px;
-margin-top:10px;
-display:block;
-}
-
 .sidebar a{
 display:block;
 padding:12px;
@@ -122,14 +115,6 @@ padding:10px;
 width: 100%;
 }
 
-.pack-grid{
-display:grid;
-grid-template-columns:repeat(3,1fr);
-gap:10px;
-padding:10px;
-width: 100%;
-}
-
 .card{
 background:white;
 border-radius:12px;
@@ -149,14 +134,6 @@ width:120px;
 height:120px;
 border-radius:12px;
 margin-bottom:10px;
-}
-
-.pack{
-background:white;
-padding:10px;
-border-radius:10px;
-text-align:center;
-box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 button{
@@ -346,39 +323,15 @@ color:white;
   padding: 0 !important;
   display: none !important;
   flex-direction: column !important;
-  max-width: 100% !important;
-  background: #f5f5f5;
-  height: 100vh !important;
-  overflow: hidden !important;
-}
-
-#ordersPage.show {
-  display: flex !important;
 }
 
 #ordersList {
   display: block !important;
   width: 100% !important;
-  max-width: 100% !important;
   padding: 20px !important;
-  margin: 0 !important;
-  box-sizing: border-box !important;
   background: #f5f5f5;
   overflow-y: auto !important;
-  overflow-x: hidden !important;
   flex: 1 !important;
-  max-height: calc(100vh - 100px) !important;
-}
-
-#ordersList h3 {
-  color: #2ecc71;
-  margin-bottom: 15px;
-  font-size: 20px;
-  position: sticky;
-  top: 0;
-  background: #f5f5f5;
-  padding: 10px 0;
-  z-index: 10;
 }
 
 .order-item {
@@ -395,11 +348,6 @@ border-right-color:#2ecc71;
 background:#e8f5e9;
 }
 
-.order-item.rejected {
-border-right-color:#e74c3c;
-background:#ffebee;
-}
-
 .order-item h3 {
 color:#2ecc71;
 margin:10px 0;
@@ -410,35 +358,12 @@ margin:5px 0;
 font-size:14px;
 }
 
-.order-item .status {
-margin-top:10px;
-font-weight:bold;
-padding:10px;
-border-radius:6px;
-}
-
-.order-item .status.pending {
-color:#8B4513;
-background:#fff3e0;
-}
-
-.order-item .status.completed {
-color:#2ecc71;
-background:#e8f5e9;
-}
-
-.order-item .status.rejected {
-color:#e74c3c;
-background:#ffcdd2;
-}
-
 #adminDetails {
 width: 100%;
 padding: 20px;
 margin: 0;
 box-sizing: border-box;
 overflow-y: auto;
-max-height: calc(100vh - 100px);
 }
 
 .balance-modal {
@@ -466,11 +391,6 @@ margin-bottom:10px;
 width:120px !important;
 margin:0 !important;
 padding:8px !important;
-}
-
-.balance-controls button {
-padding:8px 15px !important;
-margin:0 !important;
 }
 
 .usd-display {
@@ -503,19 +423,6 @@ padding:10px;
 .card img{
 width:80px;
 height:80px;
-}
-#ordersList {
-grid-template-columns:1fr;
-padding: 10px;
-}
-.order-item {
-padding: 15px;
-}
-.admin-table {
-font-size: 12px;
-}
-.admin-table th, .admin-table td {
-padding: 8px;
 }
 }
 </style>
@@ -726,15 +633,6 @@ padding: 8px;
 <div id="ordersList"></div>
 </div>
 
-<div class="modal" id="modal">
-<div class="modal-content">
-<div class="close-btn" onclick="closeModal()">✖</div>
-<h3>إدخال ID</h3>
-<input id="userId" placeholder="ادخل ID اللاعب">
-<button onclick="confirmBuy()">تأكيد</button>
-</div>
-</div>
-
 <div id="successPopup" class="modal">
   <div class="modal-content" style="width:80%;max-width:400px;">
     <h3>✅ تم استلام طلبك</h3>
@@ -744,7 +642,6 @@ padding: 8px;
 </div>
 
 <script>
-// ⚙️ إعدادات Supabase
 const SUPABASE_URL = "https://zgrzmhdjmgnnelsztita.supabase.co";
 const SUPABASE_KEY = "sb_publishable_00L0F69nuu0LopTPP6XBSg_BIxAHRNs";
 const TELEGRAM_TOKEN = "8631734604:AAF6IpXFZ40ejHmL6drsqGteNiz7XJNTcmo";
@@ -753,7 +650,6 @@ const ADMIN_EMAIL = "mhmdshyl826@gmail.com";
 
 let supabaseClient;
 
-// ✅ تهيئة Supabase
 async function initSupabase() {
   supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   
@@ -768,7 +664,6 @@ async function initSupabase() {
   }
 }
 
-// ✅ مزامنة البيانات
 async function syncData() {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (session) {
@@ -886,9 +781,11 @@ async function login(){
     updateBalance();
     syncData();
     
-    // ✅ تعديل 1: فتح لوحة الإدمن مباشرة إذا كان الإيميل هو إيميل الإدمن
+    // ✅ إذا كان إيميل الإدمن، اظهر زر الإدمن في الشريط الجانبي
     if(email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-      setTimeout(() => openAdmin(), 500);
+      document.getElementById("adminLink").style.display = "block";
+      // ثم افتح لوحة الإدمن مباشرة
+      setTimeout(() => openAdmin(), 300);
     }
     
     alert("✅ أهلا وسهلا!");
@@ -1359,7 +1256,6 @@ async function buyApp(){
     const user = getUser();
     await saveOrder(selectedApp, amount, price, userId);
     
-    // ✅ تعديل 2: إرسال الرسالة للتلكرام
     sendToTelegram("🛒 طلب شراء جديد\n👤 الإيميل: "+(user.email||"غير معروف")+"\n🆔 ID اللعبة: "+userId+"\n📱 التطبيق: "+selectedApp+"\n💎 الكمية: "+amount+"\n💰 السعر: $"+price.toFixed(2)+"\n📅 التاريخ: "+new Date().toLocaleDateString('ar-EG')+"\n⏰ الوقت: "+new Date().toLocaleTimeString('ar-EG'));
     
     alert("✅ تم تأكيد الطلب!");
@@ -1448,10 +1344,6 @@ async function savePayment(userId, email, method, amount, currencyType, type){
 
 function closePopup(){
   document.getElementById("successPopup").style.display="none";
-}
-
-function closeModal(){
-  document.getElementById("modal").style.display="none";
 }
 
 async function saveOrder(app, amount, price, gameId){
