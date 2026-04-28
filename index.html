@@ -1307,9 +1307,18 @@ async function sendFormWithImage(type){
     try {
       const user = getUser();
       const username = user.email || "غير معروف";
-      
-      await savePayment(user.id, username, method, amount, currencyType, type);
-      
+  
+    await savePayment(user.id, username, method, amount, currencyType, type)
+sendToTelegram(
+"💰 طلب شحن جديد\n" +
+"👤 المستخدم: " + username + "\n" +
+"💳 الطريقة: " + method + "\n" +
+"💵 المبلغ: " + amount + " " + currencyType + "\n" +
+"📅 التاريخ: " + new Date().toLocaleDateString('ar-EG') + "\n" +
+"⏰ الوقت: " + new Date().toLocaleTimeString('ar-EG')
+);
+
+amountInput.value = "";  
       amountInput.value = "";
       imageInput.value = "";
       document.getElementById(type + "ImagePreview").innerText = "";
