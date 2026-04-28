@@ -76,14 +76,6 @@ padding:10px;
 width: 100%;
 }
 
-.pack-grid{
-display:grid;
-grid-template-columns:repeat(3,1fr);
-gap:10px;
-padding:10px;
-width: 100%;
-}
-
 .card{
 background:white;
 border-radius:12px;
@@ -103,14 +95,6 @@ width:120px;
 height:120px;
 border-radius:12px;
 margin-bottom:10px;
-}
-
-.pack{
-background:white;
-padding:10px;
-border-radius:10px;
-text-align:center;
-box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 button{
@@ -444,19 +428,6 @@ padding:10px;
 width:80px;
 height:80px;
 }
-#ordersList {
-grid-template-columns:1fr;
-padding: 10px;
-}
-.order-item {
-padding: 15px;
-}
-.admin-table {
-font-size: 12px;
-}
-.admin-table th, .admin-table td {
-padding: 8px;
-}
 }
 </style>
 </head>
@@ -654,13 +625,31 @@ padding: 8px;
   </div>
 </div>
 
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+import { getDatabase, ref, set, get, update } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-database.js";
+import { getStorage, ref as storageRef, uploadBytes } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-storage.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyANxdz--r_1_trodUzhRyQJqZCAqHUPUrs",
+  authDomain: "shawy-kartd.firebaseapp.com",
+  projectId: "shawy-kartd",
+  databaseURL: "https://shawy-kartd-default-rtdb.firebaseio.com",
+  storageBucket: "shawy-kartd.firebasestorage.app",
+  messagingSenderId: "518482443095",
+  appId: "1:518482443095:web:f4d4b1164c7931aa155c12",
+  measurementId: "G-LMQ489TGM5"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const database = getDatabase(app);
+const storage = getStorage(app);
+
 const TELEGRAM_TOKEN = "8631734604:AAF6IpXFZ40ejHmL6drsqGteNiz7XJNTcmo";
 const CHAT_ID = "8044738479";
-const ADMIN_EMAIL = "mhmdshyl826@gmail.com";
-
-// غيّر هذا برابط Google Apps Script اللي تنشئه
-const SCRIPT_URL = "https://script.google.com/macros/d/YOUR_SCRIPT_ID/usercontent";
+const ADMIN_EMAIL = "mhmd505@gmail.com";
 
 const EXCHANGE_RATES = {
   syp: 134,
@@ -670,7 +659,7 @@ const EXCHANGE_RATES = {
 
 const apps=[{name:"يا أهلا",img:"https://i.ibb.co/G307spDQ/image.png",packs:[{amount:2500,price:5},{amount:5200,price:10},{amount:10600,price:20},{amount:27000,price:50},{amount:40000,price:75},{amount:52500,price:100}]},{name:"Soltchen",img:"https://i.ibb.co/TMqz7RhY/image.jpg",packs:[{amount:2500,price:5},{amount:5200,price:10},{amount:10600,price:20},{amount:27000,price:50},{amount:40000,price:75},{amount:52500,price:100}]},{name:"Sugo",img:"https://i.ibb.co/qVF1fnS/image.jpg",packs:[{amount:2500,price:5}]},{name:"YoParty",img:"https://i.ibb.co/8n3DfwWT/image.jpg",packs:[{amount:2500,price:5}]},{name:"Zina Live",img:"https://i.ibb.co/gM9GsQbt/image.jpg",packs:[{amount:2500,price:5}]},{name:"Soul Star",img:"https://i.ibb.co/VW6061sh/image.jpg",packs:[{amount:2500,price:5}]},{name:"4fun",img:"https://i.ibb.co/7tJjGrsn/image.jpg",packs:[{amount:2500,price:5}]}];
 
-let selectedMethod="",selectedPrice=0,selectedApp="",selectedAmount=0;
+let selectedApp="",selectedPrice=0,selectedAmount=0,currentUser=null;
 
 function convertCurrency(type){
   let amount = 0;
@@ -691,78 +680,12 @@ function convertCurrency(type){
   document.getElementById(resultSpan).innerText = usdAmount.toFixed(2);
 }
 
-function getUser(){
-  return JSON.parse(localStorage.getItem("currentUser"))||{};
-}
-
-function isAdmin(){
-  return getUser().email===ADMIN_EMAIL;
-}
-
-async function updateBalance(){
-  let user=getUser();
-  if(!user.email) return;
-  
-  try {
-    const response = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      body: new URLSearchParams({
-        action: 'getBalance',
-        email: user.email
-      })
-    });
-    
-    const data = await response.json();
-    let balance = data.balance || 0;
-    localStorage.setItem("balance_"+user.email, balance);
-    
-    document.getElementById("balanceText").innerText="الرصيد: $"+parseFloat(balance).toFixed(2);
-    if(isAdmin()) document.getElementById("adminLink").style.display="block";
-  } catch(e) {
-    console.log("خطأ في جلب الرصيد:", e);
-    // في حالة الخطأ، استخدم القيمة المحلية
-    let balance=parseFloat(localStorage.getItem("balance_"+user.email))||0;
-    document.getElementById("balanceText").innerText="الرصيد: $"+balance.toFixed(2);
-  }
-}
-
-function getBalance(){
-  let user=getUser();
-  if(!user.email) return 0;
-  
-  let balanceKey="balance_"+(user.email);
-  return parseFloat(localStorage.getItem(balanceKey))||0;
-}
-
-async function setBalance(amount){
-  let user=getUser();
-  if(!user.email) return;
-  
-  let balanceKey="balance_"+(user.email);
-  localStorage.setItem(balanceKey, amount);
-  
-  try {
-    await fetch(SCRIPT_URL, {
-      method: 'POST',
-      body: new URLSearchParams({
-        action: 'setBalance',
-        email: user.email,
-        balance: amount
-      })
-    });
-  } catch(e) {
-    console.log("خطأ في حفظ الرصيد:", e);
-  }
-  
-  updateBalance();
-}
-
-function openRegister(){
+async function openRegister(){
   document.getElementById("loginPage").style.display="none";
   document.getElementById("registerPage").style.display="flex";
 }
 
-function goToLogin(){
+async function goToLogin(){
   document.getElementById("registerPage").style.display="none";
   document.getElementById("loginPage").style.display="flex";
 }
@@ -788,49 +711,23 @@ async function register(){
   }
   
   try {
-    const response = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      body: new URLSearchParams({
-        action: 'register',
-        email: email,
-        password: password
-      })
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+    
+    // احفظ بيانات المستخدم في Firebase
+    await set(ref(database, 'users/' + user.uid), {
+      email: email,
+      balance: 0,
+      createdAt: new Date().toISOString()
     });
     
-    const data = await response.json();
-    
-    if(data.success){
-      // احفظ محلياً أيضاً
-      let users=JSON.parse(localStorage.getItem("users"))||[];
-      if(!users.find(u=>u.email===email)){
-        users.push({email: email, password: btoa(password)});
-        localStorage.setItem("users", JSON.stringify(users));
-      }
-      localStorage.setItem("balance_"+email, "0");
-      localStorage.setItem("orders_"+email, "[]");
-      
-      alert("✅ تم إنشاء الحساب بنجاح!");
-      document.getElementById("regEmail").value="";
-      document.getElementById("regPassword").value="";
-      document.getElementById("regPasswordConfirm").value="";
-      goToLogin();
-    } else {
-      alert("❌ " + (data.message || "خطأ في الإنشاء"));
-    }
-  } catch(e) {
-    alert("❌ خطأ في الاتصال. سيتم الحفظ محلياً");
-    // احفظ محلياً إذا فشل الاتصال بالسحابة
-    let users=JSON.parse(localStorage.getItem("users"))||[];
-    if(users.find(u=>u.email===email)){
-      alert("❌ هذا الحساب موجود بالفعل");
-      return;
-    }
-    users.push({email: email, password: btoa(password)});
-    localStorage.setItem("users", JSON.stringify(users));
-    localStorage.setItem("balance_"+email, "0");
-    localStorage.setItem("orders_"+email, "[]");
-    alert("✅ تم إنشاء الحساب (محلي)!");
+    alert("✅ تم إنشاء الحساب بنجاح!");
+    document.getElementById("regEmail").value="";
+    document.getElementById("regPassword").value="";
+    document.getElementById("regPasswordConfirm").value="";
     goToLogin();
+  } catch(error) {
+    alert("❌ " + error.message);
   }
 }
 
@@ -844,58 +741,63 @@ async function login(){
   }
   
   try {
-    const response = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      body: new URLSearchParams({
-        action: 'login',
-        email: email,
-        password: password
-      })
-    });
-    
-    const data = await response.json();
-    
-    if(data.success){
-      localStorage.setItem("currentUser", JSON.stringify({email: email}));
-      localStorage.setItem("balance_"+email, data.balance || 0);
-      document.getElementById("loginPage").style.display="none";
-      document.getElementById("home").style.display="block";
-      localStorage.setItem("loggedIn","true");
-      loadApps();
-      updateBalance();
-      alert("✅ أهلا وسهلا!");
-    } else {
-      alert("❌ " + (data.message || "بيانات خاطئة"));
-    }
-  } catch(e) {
-    alert("❌ خطأ في الاتصال. سيتم المحاولة محلياً");
-    // محاولة محلية
-    let users=JSON.parse(localStorage.getItem("users"))||[];
-    let user=users.find(u=>u.email===email&&u.password===btoa(password));
-    
-    if(user){
-      localStorage.setItem("currentUser", JSON.stringify(user));
-      document.getElementById("loginPage").style.display="none";
-      document.getElementById("home").style.display="block";
-      localStorage.setItem("loggedIn","true");
-      loadApps();
-      updateBalance();
-      alert("✅ أهلا وسهلا (محلي)!");
-    } else {
-      alert("❌ الإيميل أو كلمة المرور غلط");
-    }
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    alert("✅ أهلا وسهلا!");
+  } catch(error) {
+    alert("❌ " + error.message);
   }
 }
 
-function logout(){
-  localStorage.removeItem("loggedIn");
-  localStorage.removeItem("currentUser");
-  document.getElementById("home").style.display="none";
-  document.getElementById("adminPage").style.display="none";
-  document.getElementById("ordersPage").style.display="none";
-  document.getElementById("loginPage").style.display="flex";
-  document.getElementById("emailInput").value="";
-  document.getElementById("passwordInput").value="";
+async function logout(){
+  try {
+    await signOut(auth);
+    currentUser = null;
+    document.getElementById("loginPage").style.display="flex";
+    document.getElementById("home").style.display="none";
+    document.getElementById("adminPage").style.display="none";
+    document.getElementById("ordersPage").style.display="none";
+    document.getElementById("emailInput").value="";
+    document.getElementById("passwordInput").value="";
+  } catch(error) {
+    alert("❌ خطأ: " + error.message);
+  }
+}
+
+async function updateBalance(){
+  if(!currentUser) return;
+  
+  try {
+    const snapshot = await get(ref(database, 'users/' + currentUser.uid + '/balance'));
+    let balance = snapshot.val() || 0;
+    document.getElementById("balanceText").innerText="الرصيد: $"+parseFloat(balance).toFixed(2);
+    if(currentUser.email===ADMIN_EMAIL) document.getElementById("adminLink").style.display="block";
+  } catch(e) {
+    console.log("خطأ:", e);
+  }
+}
+
+async function getBalance(){
+  if(!currentUser) return 0;
+  
+  try {
+    const snapshot = await get(ref(database, 'users/' + currentUser.uid + '/balance'));
+    return snapshot.val() || 0;
+  } catch(e) {
+    return 0;
+  }
+}
+
+async function setBalance(amount){
+  if(!currentUser) return;
+  
+  try {
+    await update(ref(database, 'users/' + currentUser.uid), {
+      balance: amount
+    });
+    updateBalance();
+  } catch(e) {
+    console.log("خطأ:", e);
+  }
 }
 
 function hideAll(){
@@ -911,7 +813,7 @@ function hideAll(){
 function goHome(){hideAll();document.getElementById("home").style.display="block";}
 
 function openAdmin(){
-  if(isAdmin()){
+  if(currentUser && currentUser.email===ADMIN_EMAIL){
     hideAll();
     document.getElementById("adminPage").style.display="block";
     updateAdminStats();
@@ -920,113 +822,27 @@ function openAdmin(){
   }
 }
 
-function updateAdminStats(){
-  let users=JSON.parse(localStorage.getItem("users"))||[];
-  let totalSales=0;
-  let totalOrders=0;
-  
-  users.forEach(user=>{
-    let orders=JSON.parse(localStorage.getItem("orders_"+user.email))||[];
-    totalOrders+=orders.length;
-    orders.forEach(o=>totalSales+=o.price);
-  });
-  
-  document.getElementById("totalUsers").innerText=users.length;
-  document.getElementById("totalOrders").innerText=totalOrders;
-  document.getElementById("totalSales").innerText=totalSales.toFixed(2);
+async function updateAdminStats(){
+  // هنا يمكن إضافة إحصائيات من Firebase
+  document.getElementById("totalUsers").innerText="0";
+  document.getElementById("totalOrders").innerText="0";
+  document.getElementById("totalSales").innerText="0";
 }
 
-function showAllUsers(){
-  let users=JSON.parse(localStorage.getItem("users"))||[];
-  let html='<h3>👥 إدارة المستخدمين والأرصدة</h3>';
-  
-  users.forEach(u=>{
-    let balance=parseFloat(localStorage.getItem("balance_"+u.email))||0;
-    html+=`<div class="balance-modal"><h4>👤 ${u.email}</h4><p><strong>💰 الرصيد الحالي:</strong> $${balance.toFixed(2)}</p><div class="balance-controls"><input type="number" id="amount_${u.email}" placeholder="المبلغ" step="0.01"><button onclick="addBalance('${u.email}')">➕ إضافة</button><button onclick="subtractBalance('${u.email}')" style="background:#e74c3c;">➖ طرح</button><button onclick="deleteUser('${u.email}')" style="background:#d9534f;">🗑️ حذف</button></div></div>`;
-  });
-  
+async function showAllUsers(){
+  let html='<h3>👥 إدارة المستخدمين</h3>';
+  html+='<p>قريباً...</p>';
   html+='<br><button onclick="goBack()" style="width:100%;padding:10px;background:#ccc;color:black;">← رجوع</button>';
   document.getElementById("adminDetails").innerHTML=html;
   document.getElementById("adminDetails").style.display="block";
 }
 
-function addBalance(email){
-  let amount=parseFloat(document.getElementById("amount_"+email).value);
-  if(!amount||amount<=0){
-    alert("❌ ادخل مبلغ صحيح");
-    return;
-  }
-  
-  let currentBalance=parseFloat(localStorage.getItem("balance_"+email))||0;
-  let newBalance=currentBalance+amount;
-  
-  localStorage.setItem("balance_"+email,newBalance);
-  alert("✅ تم إضافة $"+amount+" للمستخدم!");
-  sendToTelegram("💰 تم إضافة رصيد من قبل الأدمن\n👤 المستخدم: "+email+"\n💵 المبلغ المضاف: $"+amount+"\n💳 الرصيد الجديد: $"+newBalance.toFixed(2)+"\n⏰ الوقت: "+new Date().toLocaleString());
-  showAllUsers();
-}
-
-function subtractBalance(email){
-  let amount=parseFloat(document.getElementById("amount_"+email).value);
-  if(!amount||amount<=0){
-    alert("❌ ادخل مبلغ صحيح");
-    return;
-  }
-  
-  let currentBalance=parseFloat(localStorage.getItem("balance_"+email))||0;
-  
-  if(amount>currentBalance){
-    alert("❌ المبلغ أكبر من الرصيد الحالي!");
-    return;
-  }
-  
-  let newBalance=currentBalance-amount;
-  
-  localStorage.setItem("balance_"+email,newBalance);
-  alert("✅ تم طرح $"+amount+" من المستخدم!");
-  sendToTelegram("💔 تم طرح رصيد من قبل الأدمن\n👤 المستخدم: "+email+"\n💵 المبلغ المطروح: $"+amount+"\n💳 الرصيد الجديد: $"+newBalance.toFixed(2)+"\n⏰ الوقت: "+new Date().toLocaleString());
-  showAllUsers();
-}
-
-function showAllOrders(){
-  let users=JSON.parse(localStorage.getItem("users"))||[];
-  let html='<h3>جميع الطلبات</h3><div style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>المستخدم</th><th>التطبيق</th><th>السعر</th><th>التاريخ</th><th>الحالة</th><th>الإجراء</th></tr></thead><tbody>';
-  
-  users.forEach(user=>{
-    let orders=JSON.parse(localStorage.getItem("orders_"+user.email))||[];
-    orders.forEach((o,idx)=>{
-      let status=o.completed?"✅ منفذ":"⏳ قيد الانتظار";
-      let btn=o.completed?"":`<button onclick="completeOrder('${user.email}', ${idx})" style="background:#2ecc71; padding:10px 15px; border-radius:6px; cursor:pointer; white-space: nowrap;">✅ تنفيذ</button>`;
-      html+=`<tr><td>${user.email}</td><td>${o.app}</td><td>$${o.price}</td><td>${o.date || o.time}</td><td>${status}</td><td>${btn}</td></tr>`;
-    });
-  });
-  
-  html+='</tbody></table></div><br><button onclick="goBack()" style="width:100%;padding:10px;background:#ccc;color:black;">← رجوع</button>';
+async function showAllOrders(){
+  let html='<h3>جميع الطلبات</h3>';
+  html+='<p>قريباً...</p>';
+  html+='<br><button onclick="goBack()" style="width:100%;padding:10px;background:#ccc;color:black;">← رجوع</button>';
   document.getElementById("adminDetails").innerHTML=html;
   document.getElementById("adminDetails").style.display="block";
-}
-
-function completeOrder(email, idx){
-  let orders=JSON.parse(localStorage.getItem("orders_"+email))||[];
-  if(orders[idx]){
-    orders[idx].completed=true;
-    localStorage.setItem("orders_"+email, JSON.stringify(orders));
-    sendToTelegram("✅ تم تنفيذ طلبك!\n👤 الإيميل: "+email+"\n📱 التطبيق: "+orders[idx].app+"\n💎 الكمية: "+orders[idx].amount+"\n📅 التاريخ: "+(orders[idx].date || orders[idx].time));
-    alert("✅ تم تنفيذ الطلب!");
-    showAllOrders();
-  }
-}
-
-function deleteUser(email){
-  if(confirm("هل تريد حذف هذا المستخدم؟")){
-    let users=JSON.parse(localStorage.getItem("users"))||[];
-    users=users.filter(u=>u.email!==email);
-    localStorage.setItem("users", JSON.stringify(users));
-    localStorage.removeItem("balance_"+email);
-    localStorage.removeItem("orders_"+email);
-    alert("✅ تم الحذف!");
-    showAllUsers();
-  }
 }
 
 function goBack(){
@@ -1041,12 +857,11 @@ function openOrders(){
   let ordersPage=document.getElementById("ordersPage");
   ordersPage.classList.add("show");
   ordersPage.style.display="flex";
-  loadOrders();
 }
 
-function openShamSYP(){hideAll();document.getElementById("shamSYP").style.display="block";selectedMethod="شام كاش سوري";}
-function openShamUSD(){hideAll();document.getElementById("shamUSD").style.display="block";selectedMethod="شام كاش دولار";}
-function openBank(){hideAll();document.getElementById("bankPage").style.display="block";selectedMethod="زراعات بنك";}
+function openShamSYP(){hideAll();document.getElementById("shamSYP").style.display="block";}
+function openShamUSD(){hideAll();document.getElementById("shamUSD").style.display="block";}
+function openBank(){hideAll();document.getElementById("bankPage").style.display="block";}
 
 function toggle(){
   document.getElementById("sidebar").classList.toggle("open");
@@ -1085,26 +900,23 @@ function closeModal(){
   document.getElementById("userId").value="";
 }
 
-function confirmBuy(){
+async function confirmBuy(){
   let userId=document.getElementById("userId").value.trim();
   if(!userId){
     alert("⚠️ لازم تدخل ID");
     return;
   }
   
-  let balance=getBalance();
+  let balance=await getBalance();
   if(balance<selectedPrice){
     alert("❌ رصيدك لا يكفي");
     return;
   }
   
   let newBalance=balance-selectedPrice;
-  setBalance(newBalance);
+  await setBalance(newBalance);
   
-  let user=getUser();
-  saveOrder(selectedApp,selectedAmount,selectedPrice);
-  
-  sendToTelegram("🛒 طلب شراء جديد\n👤 الإيميل: "+(user.email||"غير معروف")+"\n🆔 ID: "+userId+"\n📱 التطبيق: "+selectedApp+"\n💎 الكمية: "+selectedAmount+"\n💰 السعر: $"+selectedPrice+"\n📅 التاريخ: "+new Date().toLocaleDateString('ar-EG')+"\n⏰ الوقت: "+new Date().toLocaleTimeString('ar-EG'));
+  sendToTelegram("🛒 طلب شراء جديد\n👤 الإيميل: "+(currentUser.email||"غير معروف")+"\n🆔 ID: "+userId+"\n📱 التطبيق: "+selectedApp+"\n💎 الكمية: "+selectedAmount+"\n💰 السعر: $"+selectedPrice+"\n📅 التاريخ: "+new Date().toLocaleDateString('ar-EG')+"\n⏰ الوقت: "+new Date().toLocaleTimeString('ar-EG'));
   
   document.getElementById("modal").style.display="none";
   alert("✅ تم تأكيد الطلب!");
@@ -1144,8 +956,7 @@ function sendFormWithImage(type){
   
   reader.onload = function(e){
     let imageData = e.target.result;
-    let user = getUser();
-    let username = user.email || "غير معروف";
+    let username = currentUser.email || "غير معروف";
     
     sendImageToTelegram(imageData, username, amount, method);
     
@@ -1176,14 +987,12 @@ function sendImageToTelegram(imageData, username, amount, method){
       });
     })
     .catch(e => {
-      console.error("خطأ في إرسال الصورة:", e);
+      console.error("خطأ:", e);
     });
 }
 
 function closePopup(){
   document.getElementById("successPopup").style.display="none";
-  let allInputs=document.querySelectorAll("input:not(#emailInput):not(#passwordInput):not(#regEmail):not(#regPassword):not(#regPasswordConfirm):not(#userId)");
-  allInputs.forEach(input=>input.value="");
 }
 
 function goWhatsApp(){
@@ -1193,102 +1002,61 @@ function goWhatsApp(){
   window.open(url,"_blank");
 }
 
-function saveOrder(app, amount, price){
-  let user=getUser();
-  if(!user.email) return;
-  
-  let key="orders_"+user.email;
-  let orders=JSON.parse(localStorage.getItem(key))||[];
-  
-  orders.push({
-    app: app,
-    amount: amount,
-    price: price,
-    date: new Date().toLocaleDateString('ar-EG'),
-    time: new Date().toLocaleTimeString('ar-EG'),
-    completed: false
-  });
-  
-  localStorage.setItem(key, JSON.stringify(orders));
-}
-
-function loadOrders(){
-  let user=getUser();
-  if(!user.email){
-    document.getElementById("ordersList").innerHTML='<div style="text-align:center;padding:40px;"><p style="font-size:18px;">❌ لا يوجد مستخدم</p></div>';
-    return;
-  }
-  
-  let orders=JSON.parse(localStorage.getItem("orders_"+user.email))||[];
-  let html='<h3>طلباتي</h3>';
-  
-  if(orders.length===0){
-    html+='<div style="text-align:center;padding:40px;"><p style="font-size:18px;">📭 لا يوجد طلبات</p></div>';
-  } else {
-    orders.forEach(o=>{
-      let statusText=o.completed?"✅ تم التنفيذ":"⏳ قيد الانتظار";
-      let statusClass=o.completed?"completed":"";
-      html+=`<div class="order-item ${statusClass}"><h3>${o.app}</h3><p><strong>الكمية:</strong> ${o.amount} 💎</p><p><strong>السعر:</strong> $${o.price}</p><p><strong>📅 التاريخ:</strong> ${o.date || o.time}</p><p><strong>⏰ الوقت:</strong> ${o.time}</p><div class="status ${o.completed?"completed":"pending"}"><strong>${statusText}</strong></div></div>`;
-    });
-  }
-  
-  document.getElementById("ordersList").innerHTML=html;
-}
-
 function sendToTelegram(text){
   fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({chat_id:CHAT_ID,text:text})
-  }).catch(e=>console.error("خطأ في الإرسال:",e));
+  }).catch(e=>console.error("خطأ:",e));
 }
 
-document.addEventListener('DOMContentLoaded', function(){
-  ['sypImage', 'usdImage', 'bankImage'].forEach(id => {
-    let element = document.getElementById(id);
-    if(element){
-      element.addEventListener('change', function(e){
-        let preview = document.getElementById(id.replace('Image', 'ImagePreview'));
-        if(this.files && this.files[0]){
-          preview.innerText = '✅ تم اختيار صورة: ' + this.files[0].name;
-        }
-      });
-    }
-  });
-});
-
-setInterval(() => {
-  if(document.getElementById("ordersPage").classList.contains("show")){
-    loadOrders();
-  }
-}, 1000);
-
-window.addEventListener("DOMContentLoaded",function(){
-  let isLoggedIn=localStorage.getItem("loggedIn");
-  if(isLoggedIn){
+// مراقبة تغييرات المستخدم
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    currentUser = user;
     document.getElementById("loginPage").style.display="none";
     document.getElementById("home").style.display="block";
     loadApps();
     updateBalance();
   } else {
+    currentUser = null;
     document.getElementById("loginPage").style.display="flex";
     document.getElementById("home").style.display="none";
   }
-  document.getElementById("successPopup").style.display="none";
 });
 
-document.addEventListener("DOMContentLoaded",function(){
-  let overlay=document.getElementById("overlay");
-  let sidebar=document.getElementById("sidebar");
-  if(overlay){
-    overlay.onclick=()=>{
-      sidebar.classList.remove("open");
-      overlay.style.display="none";
-    };
-  }
-});
+// توسيع الدوال العامة
+window.openRegister = openRegister;
+window.goToLogin = goToLogin;
+window.register = register;
+window.login = login;
+window.logout = logout;
+window.updateBalance = updateBalance;
+window.getBalance = getBalance;
+window.setBalance = setBalance;
+window.hideAll = hideAll;
+window.goHome = goHome;
+window.openAdmin = openAdmin;
+window.updateAdminStats = updateAdminStats;
+window.showAllUsers = showAllUsers;
+window.showAllOrders = showAllOrders;
+window.goBack = goBack;
+window.openBalance = openBalance;
+window.openOrders = openOrders;
+window.openShamSYP = openShamSYP;
+window.openShamUSD = openShamUSD;
+window.openBank = openBank;
+window.toggle = toggle;
+window.loadApps = loadApps;
+window.openApp = openApp;
+window.buy = buy;
+window.closeModal = closeModal;
+window.confirmBuy = confirmBuy;
+window.sendFormWithImage = sendFormWithImage;
+window.closePopup = closePopup;
+window.goWhatsApp = goWhatsApp;
+window.convertCurrency = convertCurrency;
 </script>
 
 </body>
   </html>
-
