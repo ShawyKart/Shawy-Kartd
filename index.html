@@ -687,17 +687,22 @@ if (session) {
 
   if (profile) {
 
-    if(document.getElementById("balanceText")){
-      document.getElementById("balanceText").innerText =
-        "الرصيد: $" + (profile.balance || 0).toFixed(2);
-    }
+  if(document.getElementById("balanceText")){
+    document.getElementById("balanceText").innerText =
+      "الرصيد: $" + (profile.balance || 0).toFixed(2);
+  }
 
-    if(document.getElementById("profileNameDisplay")){
-      document.getElementById("profileNameDisplay").innerText =
-        profile.name || user.email;
-    }
-} 
-} 
+  if(document.getElementById("profileNameDisplay")){
+    document.getElementById("profileNameDisplay").innerText =
+      profile.name || user.email;
+  }
+
+  // 🔥 أهم سطر (الصورة)
+  if(profile.avatar_url){
+    document.getElementById("profileImage").src = profile.avatar_url;
+  }
+
+  }
 } 
 window.addEventListener('load', syncData); 
 
@@ -736,7 +741,8 @@ const apps=[
 
 let selectedApp="", selectedAmount=0, selectedPrice=0;
 async function uploadProfileImage() {
-  let fileInput = document.getElementById("profileImageInput");
+  let fileInput = document.getElementById("imageUpload");
+
   if (!fileInput.files.length) {
     alert("اختر صورة");
     return;
