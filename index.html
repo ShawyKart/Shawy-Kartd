@@ -749,15 +749,24 @@ async function uploadProfileImage() {
   }
 
   let file = fileInput.files[0];
-  let user = (await supabaseClient.auth.getUser()).data.user;
 
-  let filePath = "avatars/" + user.id + ".png";
+  let { data: userData } = await supabaseClient.auth.getUser();
+  let user = userData.user;
+
+  if (!user) {
+    alert("لازم تسجل دخول أول");
+    return;
+  }
+
+  let fileExt = file.name.split('.').pop();
+  let filePath = "avatars/" + user.id + "." + fileExt;
 
   let { error: uploadError } = await supabaseClient.storage
     .from("avatars")
     .upload(filePath, file, { upsert: true });
 
   if (uploadError) {
+    console.error(uploadError);
     alert("خطأ في رفع الصورة");
     return;
   }
@@ -768,13 +777,21 @@ async function uploadProfileImage() {
 
   let imageUrl = data.publicUrl;
 
-  await supabaseClient
+  let { error: updateError } = await supabaseClient
     .from("users")
     .update({ avatar_url: imageUrl })
     .eq("id", user.id);
 
+  if (updateError) {
+    console.error(updateError);
+    alert("تم رفع الصورة لكن فشل تحديث البيانات");
+    return;
+  }
+
+  document.getElementById("profileImage").src = imageUrl;
+
   alert("تم رفع الصورة بنجاح");
-}
+  }
 async function register(){
   const email = document.getElementById("regEmail").value.trim();
   const password = document.getElementById("regPassword").value.trim();
