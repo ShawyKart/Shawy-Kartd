@@ -743,7 +743,7 @@ let selectedApp="", selectedAmount=0, selectedPrice=0;
 async function uploadProfileImage() {
   let fileInput = document.getElementById("imageUpload");
 
-  if (!fileInput.files.length) {
+  if (!fileInput || !fileInput.files.length) {
     alert("اختر صورة");
     return;
   }
@@ -753,7 +753,6 @@ async function uploadProfileImage() {
 
   let filePath = "avatars/" + user.id + ".png";
 
-  // رفع الصورة
   let { error: uploadError } = await supabaseClient.storage
     .from("avatars")
     .upload(filePath, file, { upsert: true });
@@ -763,21 +762,19 @@ async function uploadProfileImage() {
     return;
   }
 
-  // جلب الرابط
   let { data } = supabaseClient.storage
     .from("avatars")
     .getPublicUrl(filePath);
 
   let imageUrl = data.publicUrl;
 
-  // حفظ الرابط في جدول users
   await supabaseClient
     .from("users")
     .update({ avatar_url: imageUrl })
     .eq("id", user.id);
 
   alert("تم رفع الصورة بنجاح");
-  }
+}
 async function register(){
   const email = document.getElementById("regEmail").value.trim();
   const password = document.getElementById("regPassword").value.trim();
