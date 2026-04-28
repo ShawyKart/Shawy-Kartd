@@ -658,6 +658,9 @@ async function initSupabase() {
     localStorage.setItem("currentUser", JSON.stringify({ id: session.user.id, email: session.user.email }));
     document.getElementById("loginPage").style.display = "none";
     document.getElementById("home").style.display = "block";
+            if (session.user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+            document.getElementById("adminLink").style.display = "block";
+        }
     loadApps();
     updateBalance();
     syncData();
