@@ -783,7 +783,7 @@ async function login(){
     loadApps();
     updateBalance();
     syncData();
-    
+    await loadProfile();
     // ✅ إذا كان إيميل الإدمن، اظهر زر الإدمن في الشريط الجانبي
     if(email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
       document.getElementById("adminLink").style.display = "block";
