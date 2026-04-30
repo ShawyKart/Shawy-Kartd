@@ -1072,7 +1072,10 @@ async function subtractBalance(userId){
 
 async function showAllOrders(){
   try {
-    const { data: orders } = await supabaseClient.from("orders").select("*");
+const { data: orders } = await supabaseClient
+  .from("orders")
+  .select("*")
+  .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
     
     let html='<h3>جميع الطلبات</h3><div style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>المستخدم</th><th>التطبيق</th><th>الكمية</th><th>السعر</th><th>التاريخ</th><th>الحالة</th><th>الإجراء</th></tr></thead><tbody>';
     
