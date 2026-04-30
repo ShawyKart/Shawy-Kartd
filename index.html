@@ -531,12 +531,6 @@ height:80px;
 </div>
 
 <div id="balancePage" style="display:none">
-<div style="text-align:center; margin:15px 0;">
-  <p>📷 رفع صورتك الشخصية</p>
-  <input type="file" id="profileImageInput" accept="image/*">
-  <br><br>
-  <button onclick="uploadProfileImage()">رفع الصورة</button>
-</div>
 <div class="header">
 <div onclick="goHome()" style="cursor:pointer;">رجوع</div>
 <div>إضافة رصيد</div>
@@ -675,36 +669,19 @@ async function initSupabase() {
 
 async function syncData() {
     const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session) {
+        const user = session.user;
+        const { data: profile } = await supabaseClient.from('users').select('*').eq('id', user.id).single();
+        if (profile) {
+            if(document.getElementById("balanceText")) 
+                document.getElementById("balanceText").innerText = "الرصيد: $" + (profile.balance || 0).toFixed(2);
+            if(document.getElementById("profileNameDisplay"))
+                document.getElementById("profileNameDisplay").innerText = profile.name || user.email;
+        }
+    }
+}
 
-if (session) {
-  const user = session.user;
-
-  const { data: profile } = await supabaseClient
-    .from('users')
-    .select('*')
-    .eq('id', user.id)
-    .single();
-
-  if (profile) {
-
-  if(document.getElementById("balanceText")){
-    document.getElementById("balanceText").innerText =
-      "الرصيد: $" + (profile.balance || 0).toFixed(2);
-  }
-
-  if(document.getElementById("profileNameDisplay")){
-    document.getElementById("profileNameDisplay").innerText =
-      profile.name || user.email;
-  }
-
-  // 🔥 أهم سطر (الصورة)
-  if(profile.avatar_url){
-    document.getElementById("profileImage").src = profile.avatar_url;
-  }
-
-  }
-} 
-window.addEventListener('load', syncData); 
+window.addEventListener('load', syncData);
 
 const EXCHANGE_RATES = {
   syp: 134,
@@ -740,58 +717,7 @@ const apps=[
 ];
 
 let selectedApp="", selectedAmount=0, selectedPrice=0;
-async function uploadProfileImage() {
-  let fileInput = document.getElementById("imageUpload");
 
-  if (!fileInput || !fileInput.files.length) {
-    alert("اختر صورة");
-    return;
-  }
-
-  let file = fileInput.files[0];
-
-  let { data: userData } = await supabaseClient.auth.getUser();
-  let user = userData.user;
-
-  if (!user) {
-    alert("لازم تسجل دخول أول");
-    return;
-  }
-
-  let fileExt = file.name.split('.').pop();
-  let filePath = "avatars/" + user.id + "." + fileExt;
-
-  let { error: uploadError } = await supabaseClient.storage
-    .from("avatars")
-    .upload(filePath, file, { upsert: true });
-
-  if (uploadError) {
-    console.error(uploadError);
-    alert("خطأ في رفع الصورة");
-    return;
-  }
-
-  let { data } = supabaseClient.storage
-    .from("avatars")
-    .getPublicUrl(filePath);
-
-  let imageUrl = data.publicUrl;
-
-  let { error: updateError } = await supabaseClient
-    .from("users")
-    .update({ avatar_url: imageUrl })
-    .eq("id", user.id);
-
-  if (updateError) {
-    console.error(updateError);
-    alert("تم رفع الصورة لكن فشل تحديث البيانات");
-    return;
-  }
-
-  document.getElementById("profileImage").src = imageUrl;
-
-  alert("تم رفع الصورة بنجاح");
-  }
 async function register(){
   const email = document.getElementById("regEmail").value.trim();
   const password = document.getElementById("regPassword").value.trim();
@@ -1569,3 +1495,4 @@ setInterval(() => {
 
 </body>
   </html>
+
