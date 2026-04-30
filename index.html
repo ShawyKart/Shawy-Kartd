@@ -886,6 +886,9 @@ async function uploadProfileImage(){
     .eq("id", user.id);
 
   alert("✅ تم رفع الصورة");
+
+// إعادة تحميل البيانات من السيرفر
+await loadProfile();
   }
 async function saveProfileName(){
   let name = document.getElementById('profileNameInput').value;
