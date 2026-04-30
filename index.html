@@ -677,7 +677,13 @@ async function syncData() {
                 document.getElementById("balanceText").innerText = "الرصيد: $" + (profile.balance || 0).toFixed(2);
             if(document.getElementById("profileNameDisplay"))
                 document.getElementById("profileNameDisplay").innerText = profile.name || user.email;
-        }
+          if(profile.avatar_url){
+  let currentImg = document.getElementById("profileImage").src;
+
+  if(currentImg !== profile.avatar_url){
+    document.getElementById("profileImage").src = profile.avatar_url;
+  }
+          }
     }
 }
 
@@ -887,9 +893,10 @@ async function uploadProfileImage(){
 
   alert("✅ تم رفع الصورة");
 
-// إعادة تحميل البيانات من السيرفر
-await loadProfile();
-  }
+// ⬇️ خليه ينتظر شوي قبل التحديث
+setTimeout(() => {
+  loadProfile();
+}, 500);} 
 async function saveProfileName(){
   let name = document.getElementById('profileNameInput').value;
   const user = getUser();
