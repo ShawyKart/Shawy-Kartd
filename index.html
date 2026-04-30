@@ -677,13 +677,7 @@ async function syncData() {
                 document.getElementById("balanceText").innerText = "الرصيد: $" + (profile.balance || 0).toFixed(2);
             if(document.getElementById("profileNameDisplay"))
                 document.getElementById("profileNameDisplay").innerText = profile.name || user.email;
-          if(profile.avatar_url){
-  let currentImg = document.getElementById("profileImage").src;
-
-  if(currentImg !== profile.avatar_url){
-    document.getElementById("profileImage").src = profile.avatar_url;
-  }
-          }
+          
     }
 }
 
