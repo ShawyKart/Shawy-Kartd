@@ -855,21 +855,40 @@ function calculateAppPrice() {
   }
   document.getElementById("appPrice").innerText = price.toFixed(2);
 }
-
 async function uploadProfileImage(){
   let file = document.getElementById('imageUpload').files[0];
   if(!file) return;
-  
+
   const user = getUser();
   if(!user.id) return;
-  
-  const reader = new FileReader();
-  reader.onload = async function(e){
-    document.getElementById('profileImage').src = e.target.result;
-  };
-  reader.readAsDataURL(file);
-}
 
+  let filePath = "avatars/" + user.id + ".png";
+
+  let { error: uploadError } = await supabaseClient.storage
+    .from('avatars')
+    .upload(filePath, file, { upsert: true });
+
+  if(uploadError){
+    alert("❌ خطأ في رفع الصورة");
+    console.error(uploadError);
+    return;
+  }
+
+  let { data } = supabaseClient.storage
+    .from('avatars')
+    .getPublicUrl(filePath);
+
+  let imageUrl = data.publicUrl;
+
+  document.getElementById('profileImage').src = imageUrl;
+
+  await supabaseClient
+    .from("users")
+    .update({ avatar_url: imageUrl })
+    .eq("id", user.id);
+
+  alert("✅ تم رفع الصورة");
+}
 async function saveProfileName(){
   let name = document.getElementById('profileNameInput').value;
   const user = getUser();
@@ -889,6 +908,9 @@ async function loadProfile(){
   if(data){
     document.getElementById('profileNameInput').value = data.name || "";
     document.getElementById('profileNameDisplay').innerText = data.name || "";
+    if(data.avatar_url){
+  document.getElementById('profileImage').src = data.avatar_url;
+    }
   }
 }
 
