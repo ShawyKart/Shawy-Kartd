@@ -869,12 +869,10 @@ async function uploadProfileImage(){
     .upload(filePath, file, { upsert: true });
 
   if(uploadError){
-    alert("❌ خطأ في رفع الصورة");
-    console.error(uploadError);
-    return;
+    console.log("Upload error:", uploadError);
   }
 
-  let { data } = supabaseClient.storage
+  let { data } = await supabaseClient.storage
     .from('avatars')
     .getPublicUrl(filePath);
 
@@ -888,7 +886,7 @@ async function uploadProfileImage(){
     .eq("id", user.id);
 
   alert("✅ تم رفع الصورة");
-}
+  }
 async function saveProfileName(){
   let name = document.getElementById('profileNameInput').value;
   const user = getUser();
