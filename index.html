@@ -893,7 +893,7 @@ async function buyApp(){
  const { data, error } = await supabaseClient.from("orders").insert([{
   user_id: user.id,
   user_email: user.email,
-  app: selectedApp,
+product: selectedApp,
   amount: amount,
   price: price,
   game_id: userId,
